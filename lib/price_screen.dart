@@ -94,7 +94,9 @@ class _PriceScreenState extends State<PriceScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget> [
+
               CryptoCard(
                 value: isWaiting ? '?' : coinValues['BTC']!,
                 selectedCurrency: selectedCurrency,
