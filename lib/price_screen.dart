@@ -1,6 +1,6 @@
-import 'package:bitcoin_ticker/coin_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'coin_data.dart';
 import 'dart:io' show Platform;
 
 class PriceScreen extends StatefulWidget {
@@ -9,89 +9,79 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
+  String selectedCurrency = 'AUD';
 
 
-
-  String selectedCurrency = 'USD';
-
-  String bitcoinValueInUsd = '?';
-
-  void getData() async {
-    try{
-      double data = await CoinData().getCoinData(selectedCurrency);
-      setState(() {
-        bitcoinValueInUsd = data.toStringAsFixed(0);
-      });
-    }catch (e){
-
-    }
-
-
-  }
-
-  DropdownButton<String> getDropDown(){
-    List<DropdownMenuItem<String>> dropDownItems = [];
-    for (String currency in currenciesList){
+  DropdownButton<String> androidDropdown() {
+    List<DropdownMenuItem<String>> dropdownItems = [];
+    for (String currency in currenciesList) {
       var newItem = DropdownMenuItem(
-
-        value: currency,
         child: Text(currency),
+        value: currency,
       );
-
-      dropDownItems.add(newItem);
+      dropdownItems.add(newItem);
     }
 
-
-
-    return DropdownButton(
-
+    return DropdownButton<String>(
       value: selectedCurrency,
-      items: dropDownItems,
-      onChanged: (value){
-
-      setState(() {
-        selectedCurrency = value!;
-        getData();
+      items: dropdownItems,
+      onChanged: (value) {
+        setState(() {
+          selectedCurrency = value!;
+          getData();
         });
-
-
       },
-
     );
-
   }
 
-  CupertinoPicker iosPicker (){
-
-    List<Widget> pickerItems = [];
-    for (String currency in currenciesList){
+  CupertinoPicker iOSPicker() {
+    List<Text> pickerItems = [];
+    for (String currency in currenciesList) {
       pickerItems.add(Text(currency));
-
     }
 
-   return CupertinoPicker(
+    return CupertinoPicker(
+      backgroundColor: Colors.lightBlue,
       itemExtent: 32.0,
-      onSelectedItemChanged: (index){
+      onSelectedItemChanged: (selectedIndex) {
         setState(() {
-          //1: Save the selected currency to the property selectedCurrency
-          selectedCurrency = currenciesList[index];
-          //2: Call getData() when the picker/dropdown changes.
+          selectedCurrency = currenciesList[selectedIndex];
           getData();
         });
       },
       children: pickerItems,
     );
+  }
 
+ Map<String, String> coinValues = {};
+
+  String value = '?';
+
+  bool isWaiting = false;
+
+  //TODO 7: Figure out a way of displaying a '?' on screen while we're waiting for the price data to come back. Hint: You'll need a ternary operator.
+
+  //TODO 6: Update this method to receive a Map containing the crypto:price key value pairs. Then use that map to update the CryptoCards.
+  void getData() async {
+    isWaiting = true;
+    try {
+      var data = await CoinData().getCoinData(selectedCurrency);
+      isWaiting = false;
+      setState(() {
+        coinValues = data;
+      });
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getData();
-
   }
 
+  //TODO: For bonus points, create a method that loops through the cryptoList and generates a CryptoCard for each.
 
   @override
   Widget build(BuildContext context) {
@@ -103,33 +93,25 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
+          Column(
+            children: <Widget> [
+              CryptoCard(
+                value: isWaiting ? '?' : coinValues['BTC']!,
+                selectedCurrency: selectedCurrency,
+                selectedCrypto: 'BTC',
               ),
-              child:  Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = $bitcoinValueInUsd $selectedCurrency',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+              CryptoCard(selectedCrypto: 'ETH', value: isWaiting ? '?' : coinValues['ETH']!, selectedCurrency: selectedCurrency),
+              CryptoCard(selectedCrypto: 'LTC', value: isWaiting ? '?' : coinValues['LTC']!, selectedCurrency: selectedCurrency),
+
+            ],
           ),
+
           Container(
             height: 150.0,
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: Platform.isIOS ? iosPicker(): getDropDown(),
+            child: Platform.isIOS ? iOSPicker() : androidDropdown(),
           ),
         ],
       ),
@@ -137,3 +119,40 @@ class _PriceScreenState extends State<PriceScreen> {
   }
 }
 
+class CryptoCard extends StatelessWidget {
+   CryptoCard({
+     required this.selectedCrypto,
+
+    required this.value,
+    required this.selectedCurrency,
+  });
+
+  final String value;
+  final String selectedCrypto;
+  final String selectedCurrency;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      child: Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 $selectedCrypto = $value $selectedCurrency',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

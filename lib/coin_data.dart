@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
 const List<String> currenciesList = [
@@ -32,33 +31,34 @@ const List<String> cryptoList = [
   'LTC',
 ];
 
+const coinAPIURL = 'https://rest.coinapi.io/v1/exchangerate';
 const apiKey = '169D1432-0824-4C7B-9953-33BAE1C08E5E';
-const coinApiUri = 'https://rest.coinapi.io/v1/exchangerate';
 
 class CoinData {
+  Future getCoinData(String selectedCurrency) async {
 
-  Future getCoinData(String currency) async {
-    http.Response response = await http.get(Uri.parse('$coinApiUri/BTC/$currency?apiKey=$apiKey'));
-    if (response.statusCode == 200){
-      String data = response.body;
+    Map<String, String> cryptoPrices = {};
 
-      var decodedData = jsonDecode(data);
+    for (String crypto in cryptoList){
 
-      var lastPrice = decodedData['rate'];
+      String requestURL = '$coinAPIURL/$crypto/$selectedCurrency?apikey=$apiKey';
 
-      return lastPrice;
+      http.Response response = await http.get(Uri.parse(requestURL));
+
+      if (response.statusCode == 200) {
+        var decodedData = jsonDecode(response.body);
+        var lastPrice = decodedData['rate'];
+
+        cryptoPrices[crypto] = lastPrice.toStringAsFixed(0);
+
+      } else {
+        print(response.statusCode);
+        throw 'Problem with the get request';
+      }
+
+
     }
-    else{
-      print(response.statusCode);
-    }
+    return cryptoPrices;
+
   }
-
-
-
-
-
-
-
-
-
 }
